@@ -116,7 +116,7 @@ fn get_bits_by_letter(encoded_word_vec: Vec<u32>) -> BitsByLetter {
 
 fn main() {
     let max_words = 5; // Maximum number of words to use for finding pangrams, does not work if solutions exist below max_words
-    let exhaustive_search = false; // If true, subset words will be removed ("ALL" is a subset of "BALL")
+    let exhaustive_search = true; // If false, subset words will be removed ("ALL" is a subset of "BALL")
 
     let start = Instant::now();
 
@@ -142,7 +142,7 @@ fn main() {
     all_bits.dedup();
     all_bits.reverse();
 
-    if exhaustive_search {
+    if !exhaustive_search {
         let non_subsets = find_encoded_non_subsets(&all_bits);
         let mut iter = non_subsets.iter();
         all_bits.retain(|_| *iter.next().unwrap());
