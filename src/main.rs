@@ -60,12 +60,8 @@ struct SearchStructure {
 }
 
 impl SearchStructure {
-    fn new() -> SearchStructure {
-        return SearchStructure { search_structure: vec![] }
-    }
-
     fn build(number_of_letters: usize, words: Vec<Word>) -> SearchStructure {
-        let mut output = SearchStructure::new().search_structure;
+        let mut output = vec![];
         for _letter in 0..number_of_letters {
             output.push(WordsWithLetter::new())
         }
@@ -83,10 +79,10 @@ impl SearchStructure {
     }
 
     fn find_pangrams(&self, current_pangram: Pangram, mut pangrams: Vec<Pangram>) -> Vec<Pangram> {
-        for new_word in &self.search_structure[current_pangram.selected_letters.leading_ones() as usize].words {
-            let new_pangram = current_pangram.add_new_word(new_word.clone());
-            match new_pangram {
+        for new_word in &self.search_structure[current_pangram.next_missing_letter()].words {
+            match current_pangram.add_new_word(new_word.clone()) {
                 PangramState::CompletePangram(solution) => {
+                    // Duplicate CompletePangrams are possible and need to be filtered out
                     if !pangrams.contains(&solution) {
                         pangrams.push(solution)
                     }
@@ -104,7 +100,8 @@ impl SearchStructure {
 
 #[derive(Debug, PartialEq)]
 struct Pangram {
-    // Pangram, in this context, refers to a group of Words with one of each letter
+    // Pangram, in this context, refers to a group of Words that captures one of each letter
+    // Trivial Example: [ABCDE, FGHIJ, KLMNO, PQRST, UVWXYZ]
     selected_words: Vec<Word>,
     selected_letters: u32
 }
@@ -125,16 +122,24 @@ impl Pangram {
         return new_pangram.check()
     }
 
-    fn check(self) -> PangramState {
+    fn check(mut self) -> PangramState {
         if self.selected_letters.leading_ones() >= 26 {
-            let mut words_in_solution = self.selected_words;
-            words_in_solution.sort_by(|a: &Word, b| a.letters_present.cmp(&b.letters_present));
-            return PangramState::CompletePangram(Pangram { selected_words: words_in_solution, selected_letters: 26})
+            return PangramState::CompletePangram(self.sort_words())
         } else if self.selected_words.len() >= MAX_SOLUTION_SIZE as usize {
             return PangramState::FailedPangram(self)
         } else {
             return PangramState::PotentialPangram(self)
         }
+    }
+
+    fn next_missing_letter(&self) -> usize {
+        return self.selected_letters.leading_ones() as usize
+    }
+
+    fn sort_words(&mut self) -> Pangram {
+        let words_in_solution = &mut self.selected_words;
+        words_in_solution.sort_by(|a, b| a.letters_present.cmp(&b.letters_present));
+        return Pangram { selected_words: words_in_solution.to_vec(), selected_letters: self.selected_letters }
     }
 }
 
