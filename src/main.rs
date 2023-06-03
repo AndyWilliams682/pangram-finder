@@ -3,7 +3,7 @@ use itertools::Itertools;
 use std::time::Instant;
 
 const ALL_WORDS: &str = include_str!("words.txt");
-const MAX_SOLUTION_SIZE: usize = 5; // Maximum number of words to use for finding pangrams
+const MAX_SOLUTION_SIZE: usize = 4; // Maximum number of words to use for finding pangrams
 
 #[derive(Debug, PartialEq, Clone)]
 struct SanitizedString(String);
@@ -84,10 +84,6 @@ impl SearchStructure {
         for new_word in &self.search_structure[current_pangram.next_missing_letter()].words {
             match current_pangram.check_with(new_word.clone()) {
                 PangramState::CompletePangram(solution) => {
-                    // Duplicate CompletePangrams are possible and need to be filtered out
-                    // if !pangrams.contains(&solution) {
-                    //     pangrams.push(solution)
-                    // }
                     pangrams.push(solution);
                     continue
                 },
