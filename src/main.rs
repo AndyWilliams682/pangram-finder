@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use itertools::Itertools;
 use std::time::Instant;
 
 const ALL_WORDS: &str = include_str!("words.txt");
@@ -27,7 +28,7 @@ impl SanitizedString {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 struct Word {
     name: String,
     letters_present: u32
@@ -84,9 +85,10 @@ impl SearchStructure {
             match current_pangram.check_with(new_word.clone()) {
                 PangramState::CompletePangram(solution) => {
                     // Duplicate CompletePangrams are possible and need to be filtered out
-                    if !pangrams.contains(&solution) {
-                        pangrams.push(solution)
-                    }
+                    // if !pangrams.contains(&solution) {
+                    //     pangrams.push(solution)
+                    // }
+                    pangrams.push(solution);
                     continue
                 },
                 PangramState::FailedPangram() => continue,
@@ -141,7 +143,7 @@ enum PangramState {
     CompletePangram(Solution)
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone, Eq, Hash)]
 struct Solution {
     words: Vec<Word>
 }
@@ -181,7 +183,8 @@ fn main() -> () {
     let start = Instant::now();
 
     let all_pangrams = search_structure.find_pangrams(Pangram::new(), vec![]);
+    let no_dupes = all_pangrams.into_iter().unique();
     
-    println!("{:?}", all_pangrams.len());
+    println!("{:?}", no_dupes.collect::<Vec<Solution>>().len());
     println!("Time elapsed is: {:?}", start.elapsed());
 }
