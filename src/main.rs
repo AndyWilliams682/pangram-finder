@@ -1,7 +1,8 @@
 use std::collections::HashMap;
+use std::time::Instant;
 
 const ALL_WORDS: &str = include_str!("words.txt");
-const MAX_SOLUTION_SIZE: i32 = 4; // Maximum number of words to use for finding pangrams
+const MAX_SOLUTION_SIZE: usize = 5; // Maximum number of words to use for finding pangrams
 
 #[derive(Debug, PartialEq, Clone)]
 struct SanitizedString(String);
@@ -78,9 +79,9 @@ impl SearchStructure {
         return SearchStructure { search_structure: output }
     }
 
-    fn find_pangrams(&self, current_pangram: Pangram, mut pangrams: Vec<Pangram>) -> Vec<Pangram> {
+    fn find_pangrams(&self, current_pangram: Pangram, mut pangrams: Vec<Solution>) -> Vec<Solution> {
         for new_word in &self.search_structure[current_pangram.next_missing_letter()].words {
-            match current_pangram.add_new_word(new_word.clone()) {
+            match current_pangram.check_with(new_word.clone()) {
                 PangramState::CompletePangram(solution) => {
                     // Duplicate CompletePangrams are possible and need to be filtered out
                     if !pangrams.contains(&solution) {
@@ -88,7 +89,7 @@ impl SearchStructure {
                     }
                     continue
                 },
-                PangramState::FailedPangram(_) => continue,
+                PangramState::FailedPangram() => continue,
                 PangramState::PotentialPangram(potential_solution) => {
                     pangrams = self.find_pangrams(potential_solution, pangrams)
                 }
@@ -111,43 +112,38 @@ impl Pangram {
         return Pangram { selected_words: vec![], selected_letters: 0 }
     }
 
-    fn add_new_word(&self, new_word: Word) -> PangramState {
-        let new_selected_words = &mut vec![new_word.clone()];
-        new_selected_words.extend_from_slice(&self.selected_words);
-
+    fn check_with(&self, new_word: Word) -> PangramState {
         let new_selected_letters = self.selected_letters | new_word.letters_present;
-
-        let new_pangram = Pangram { selected_words: new_selected_words.to_vec(), selected_letters: new_selected_letters };
-
-        return new_pangram.check()
-    }
-
-    fn check(mut self) -> PangramState {
-        if self.selected_letters.leading_ones() >= 26 {
-            return PangramState::CompletePangram(self.sort_words())
-        } else if self.selected_words.len() >= MAX_SOLUTION_SIZE as usize {
-            return PangramState::FailedPangram(self)
+        if new_selected_letters.leading_ones() >= 26 {
+            let new_selected_words = &mut vec![new_word.clone()];
+            new_selected_words.extend_from_slice(&self.selected_words);
+            new_selected_words.sort_by(|a, b| a.letters_present.cmp(&b.letters_present));
+            return PangramState::CompletePangram(Solution { words: new_selected_words.to_vec() })
+        } else if self.selected_words.len() + 1 >= MAX_SOLUTION_SIZE {
+            return PangramState::FailedPangram()
         } else {
-            return PangramState::PotentialPangram(self)
+            let new_selected_words = &mut vec![new_word.clone()];
+            new_selected_words.extend_from_slice(&self.selected_words);
+            let new_pangram = Pangram { selected_words: new_selected_words.to_vec(), selected_letters: new_selected_letters };
+            return PangramState::PotentialPangram(new_pangram)
         }
     }
 
     fn next_missing_letter(&self) -> usize {
         return self.selected_letters.leading_ones() as usize
     }
-
-    fn sort_words(&mut self) -> Pangram {
-        let words_in_solution = &mut self.selected_words;
-        words_in_solution.sort_by(|a, b| a.letters_present.cmp(&b.letters_present));
-        return Pangram { selected_words: words_in_solution.to_vec(), selected_letters: self.selected_letters }
-    }
 }
 
 #[derive(Debug)]
 enum PangramState {
     PotentialPangram(Pangram),
-    FailedPangram(Pangram),
-    CompletePangram(Pangram)
+    FailedPangram(),
+    CompletePangram(Solution)
+}
+
+#[derive(Debug, PartialEq)]
+struct Solution {
+    words: Vec<Word>
 }
 
 fn main() -> () {
@@ -182,7 +178,10 @@ fn main() -> () {
     let search_structure = SearchStructure::build(letters_sorted_by_rarity.len(),
                                                   word_list);
 
+    let start = Instant::now();
+
     let all_pangrams = search_structure.find_pangrams(Pangram::new(), vec![]);
     
     println!("{:?}", all_pangrams.len());
+    println!("Time elapsed is: {:?}", start.elapsed());
 }
