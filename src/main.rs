@@ -1,9 +1,8 @@
 use std::collections::HashMap;
 use itertools::Itertools;
-use std::time::Instant;
 
-const ALL_WORDS: &str = include_str!("words.txt");
-const MAX_SOLUTION_SIZE: usize = 4; // Maximum number of words to use for finding pangrams
+const ALL_WORDS: &str = include_str!("wordle_answers.txt");
+const MAX_SOLUTION_SIZE: usize = 6; // Maximum number of words to use for finding pangrams
 
 #[derive(Debug, PartialEq, Clone)]
 struct SanitizedString(String);
@@ -175,12 +174,8 @@ fn main() -> () {
     
     let search_structure = SearchStructure::build(letters_sorted_by_rarity.len(),
                                                   word_list);
-
-    let start = Instant::now();
-
     let all_pangrams = search_structure.find_pangrams(Pangram::new(), vec![]);
     let no_dupes = all_pangrams.into_iter().unique();
     
     println!("{:?}", no_dupes.collect::<Vec<Solution>>().len());
-    println!("Time elapsed is: {:?}", start.elapsed());
 }
