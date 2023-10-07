@@ -1,0 +1,4 @@
+# Pangram Finder
+The inspiration for this project comes from a variation of the problem found in [this video](https://youtu.be/_-AfhLQfb6w?si=CCIcNl-duvjLUJ0F) from Matt Parker. Some techniques were taken from the follow-up video [here](https://youtu.be/c33AZBnRHks?si=kj6F2UpXv-fsfR5i). However, this project solves a slightly different problem: Given a list of words, how many pangrams exist of size n. A pangram, in this context, is a list of words that contain at least one of each letter (A trivial case for n = 5 is \["ABCDE", "FGHIJ", "KLMNO", "PQRST", "UVWXYZ"\]).
+
+The example used in this repo includes a subset of Wordle solutions, which only has solutions for n = 6 (two solutions).
